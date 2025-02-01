@@ -1,0 +1,120 @@
+import org.json.simple.JSONObject;
+import java.sql.Connection;
+import javax.imageio.ImageIO;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.sql.SQLException;
+public class WeatherAppGui extends JFrame {
+ private JSONObject weatherData;
+ public WeatherAppGui(){
+ // setup our gui and add a title
+ super("Weather App");
+ setDefaultCloseOperation(EXIT_ON_CLOSE);
+ setSize(450, 650);
+ // load our gui at the center of the screen
+ setLocationRelativeTo(null);
+ setLayout(null);
+ setResizable(false);
+ try (Connection connection =
+DatabaseConnector.getConnection("Weather")) {
+ DatabaseConnector.wipeWeatherData(connection);
+ } catch (SQLException e) {
+ e.printStackTrace();
+ }
+ addGuiComponents();
+ }
+ private void addGuiComponents(){
+ // search field
+ JTextField searchTextField = new JTextField();
+ searchTextField.setBounds(15, 15, 351, 45);
+ searchTextField.setFont(new Font("Dialog", Font.PLAIN, 24));
+ add(searchTextField);
+ // weather image
+ JLabel weatherConditionImage = new
+JLabel(loadImage("src/assets/cloudy.png"));
+ weatherConditionImage.setBounds(0, 125, 450, 217);
+ add(weatherConditionImage);
+ // temperature text
+ JLabel temperatureText = new JLabel("10 C");
+ temperatureText.setBounds(0, 350, 450
+   temperatureText.setFont(new Font("Dialog", Font.BOLD, 48));
+ temperatureText.setHorizontalAlignment(SwingConstants.CENTER);
+ add(temperatureText);
+ // weather condition description
+ JLabel weatherConditionDesc = new JLabel("Cloudy");
+ weatherConditionDesc.setBounds(0, 405, 450, 36);
+ weatherConditionDesc.setFont(new Font("Dialog", Font.PLAIN, 32));
+ weatherConditionDesc.setHorizontalAlignment(SwingConstants.CENTER);
+ add(weatherConditionDesc);
+ // humidity image
+ JLabel humidityImage = new
+JLabel(loadImage("src/assets/humidity.png"));
+ humidityImage.setBounds(15, 500, 74, 66);
+ add(humidityImage);
+JLabel windspeedImage = new
+JLabel(loadImage("src/assets/windspeed.png"));
+ windspeedImage.setBounds(220, 500, 74, 66);
+ add(windspeedImage);
+ // windspeed text
+ JLabel windspeedText = new JLabel("<html><b>Windspeed</b>
+15km/h</html>");
+ windspeedText.setBounds(310, 500, 85, 55);
+ windspeedText.setFont(new Font("Dialog", Font.PLAIN, 16));
+ add(windspeedText);
+ // search button
+ JButton searchButton = new
+JButton(loadImage("src/assets/search.png"));
+ // change the cursor to a hand cursor when hovering over this button
+
+searchButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+ searchButton.setBounds(375, 13, 47, 45);
+ searchButton.addActionListener(new ActionListener() {
+ @Override
+ public void actionPerformed(ActionEvent e) {
+ // get location from user
+String userInput = searchTextField.getText();
+ if(userInput.replaceAll("\\s", "").length() <= 0){
+ return;
+ }
+ // retrieve weather data
+ weatherData = WeatherApp.getWeatherData(userInput);
+ // update weather image
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+public class DatabaseConnector {
+ public static Connection getConnection(String dbname) throws SQLException
+{
+ String url = "jdbc:mysql://localhost:3306/" + dbname;
+ String username = "root"; //MSQ username
+ String password = " "; //MySQL Password
+ return DriverManager.getConnection(url, username, password);
+ }
+ public static void saveWeatherData(Connection connection, String location,
+double temperature) throws SQLException {
+ String insertQuery = "INSERT INTO weather_data (location, temperature)
+VALUES (?, ?)";
+ try (PreparedStatement preparedStatement =
+connection.prepareStatement(insertQuery)) {
+ preparedStatement.setString(1, location);
+ preparedStatement.setDouble(2, temperature);
+ preparedStatement.executeUpdate();
+ }
+ }
+ public static String getWeatherData(Connection connection) throws
+SQLException {
+ String selectQuery = "SELECT location, temperature FROM weather_data";
+ StringBuilder weatherData = new StringBuilder();
+ try (PreparedStatement preparedStatement =
+connection.prepareStatement(selectQuery);
+ ResultSet resultSet = preparedStatement.executeQuery()) {
+ while (resultSet.next()) {
+ String location = resultSet.getString("location");
+ double temperature = resultSet.getDouble("temperature");
