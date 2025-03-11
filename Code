@@ -1,4 +1,4 @@
-// _*_ mode:Python _*_
+// _*_ mode: Python_*_
 import org.json.simple.JSONObject;
 import java.sql.Connection;
 import javax.imageio.ImageIO;
